@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sports</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="sub">
+  <span class="meta" id="gen"></span>
+  <span class="badge" id="demo" style="display:none">Demo data</span>
+  <nav id="tabs"></nav>
+  <button class="btn" id="keybtn">Key</button>
+</header>
+<div class="wrap" id="wrap"><main id="main"></main><aside id="key"></aside></div>
+<script>
+const D = __DATA__;
+const PAGE = "sports";
+const KEY = { main: [["Coming soon", "This page gets built when we set up Kalshi: the markets you can trade, their prices and moves, and the news and data that drive them."]] };
+</script>
+<script src="../assets/ui.js"></script>
+<script>
+initPage([["main","Sports", () => `<div class="empty"><b>${esc(D.title)}</b><p>${esc(D.note)}</p></div>`]], "main");
+</script>
+</body>
+</html>

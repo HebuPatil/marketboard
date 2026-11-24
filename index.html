@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+body{overflow:hidden}
+header.top{position:static}
+iframe{border:0;width:100%;height:calc(100vh - 58px);display:block;background:var(--bg)}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Dashboard</h1>
+  <nav id="pages" style="margin-left:24px"></nav>
+  <span class="meta" id="asof" style="margin-left:auto"></span>
+</header>
+<iframe id="frame" title="Dashboard page"></iframe>
+<script>
+// Add a page here after creating <name>.py and templates/<name>.html
+const PAGES = [["markets","Markets"],["news","News"],["crypto","Crypto / emerging"],["sports","Sports"]];
+function show(p){
+  document.getElementById("frame").src = "pages/" + p + ".html";
+  document.getElementById("pages").innerHTML = PAGES.map(([id,n]) => `<button class="${id===p?"on":""}" onclick="show('${id}')">${n}</button>`).join("");
+  try{ localStorage.setItem("page", p) }catch(e){}
+}
+// Data freshness (works on the hosted site; skipped when opened as a local file)
+fetch("pages/markets.json").then(r => r.json()).then(d => {
+  const t = new Date(d.generated_iso), hrs = (Date.now() - t) / 36e5, el = document.getElementById("asof");
+  el.textContent = "Data from " + t.toLocaleString(undefined, {weekday:"short", hour:"numeric", minute:"2-digit"});
+  const weekend = [0,6].includes(new Date().getDay());
+  if (hrs > (weekend ? 72 : 30)) { el.textContent += " (stale: check the Actions tab)"; el.className = "badge"; }
+}).catch(() => {});
+let start = "markets"; try{ start = localStorage.getItem("page") || "markets" }catch(e){}
+show(PAGES.some(x=>x[0]===start) ? start : "markets");
+</script>
+</body>
+</html>

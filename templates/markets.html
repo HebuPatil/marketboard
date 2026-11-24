@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markets</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="sub">
+  <span class="meta" id="gen"></span>
+  <span class="badge" id="demo" style="display:none">Demo data</span>
+  <nav id="tabs"></nav>
+  <button class="btn" id="keybtn">Key</button>
+</header>
+<div class="wrap" id="wrap"><main id="main"></main><aside id="key"></aside></div>
+<script>
+const D = __DATA__;
+const PAGE = "markets";
+const KEY = {
+ daily: [
+  ["How to read a tile","Big number is the latest value. Below it: today's change (% for prices, bp for yields and spreads). The orange pill is the z-score: today's move divided by its normal daily move. 2 or more means unusual, read about it. The line is the last 30 days."],
+  ["Movers","Your whole watchlist ranked by z-score, not raw %. A 3% NVDA day is normal; a 1% move in HYG is not."],
+  ["^GSPC","S&P 500. The market.","Read it with NDX and RUT: all three up = broad risk-on; NDX up and RUT down = narrow tech-only rally."],
+  ["^NDX","Nasdaq 100. Mostly mega-cap tech, so it is your AI-trade index.","Most sensitive to the 10y real yield."],
+  ["^RUT","Russell 2000 small caps. Carry floating-rate debt, so they rally hardest when the market prices Fed cuts.","Your read on the real economy and rate relief."],
+  ["^DJI","Dow. Weighted by share price, not size, so it tells you the least. Kept only because headlines quote it."],
+  ["^VIX","Implied vol on S&P options, 30 days out. Under 15 calm, over 25 stressed, over 35 panic.","VIX rising while SPX is flat = hedging demand building."],
+  ["^MOVE","The VIX of Treasuries. Rates drive tech valuations, so MOVE spikes often come before tech selloffs.","MOVE high while VIX low = bonds worried, stocks not yet."],
+  ["DGS2","2y Treasury yield. Most tied to where the Fed will be over the next two years. Moves on CPI, jobs, Fed speakers. FRED data, one day lag.","2y falling fast = cuts being priced, often because growth is weakening."],
+  ["DGS10","10y yield. Growth + inflation + term premium (extra pay for holding long bonds). Benchmark for mortgages and valuations."],
+  ["DGS30","30y yield. Where deficit and Treasury supply worries show up first.","30y rising while 2y falls = fiscal or term-premium worry."],
+  ["T10Y2Y","2s10s: 10y minus 2y, shown in %, changes in bp. Negative = inverted (market expects cuts / slowdown).","Bull steepener (2y falling faster) = cuts coming. Bear steepener (10y rising faster) = term premium, bad for stocks."],
+  ["DFII10","10y real yield (TIPS): the inflation-adjusted cost of money. The discount rate for long-duration assets like tech.","The one rate to watch for tech. See the Weekly chart vs NDX."],
+  ["T5YIE","5y breakeven: nominal 5y minus TIPS 5y = inflation the market expects.","Up with oil = inflation scare. Down with yields = growth scare."],
+  ["BAMLC0A0CM","Investment-grade spread: extra yield over Treasuries that high-quality companies pay. Shown in %.","Hyperscalers are big IG issuers now; AI financing stress would show here."],
+  ["BAMLH0A0HYM2","High-yield (junk) spread. Credit usually cracks before stocks do.","Widening while stocks hold up = equities are late."],
+  ["HYG","High-yield bond ETF. Live, intraday stand-in for the HY spread (FRED lags a day)."],
+  ["LQD","Investment-grade bond ETF. Moves with both rates and IG spreads."],
+  ["DX-Y.NYB","Dollar index vs a basket of majors. Strong dollar = tighter global conditions, pressure on commodities and multinational earnings.","Dollar spiking in a selloff = real flight to safety."],
+  ["JPY=X","USDJPY. Cheap yen funding drives a lot of global leverage.","A sharp drop (yen strengthening) can force carry unwinds that hit tech and crypto."],
+  ["EURUSD=X","Euro vs dollar. Mostly the mirror of DXY."],
+  ["CL=F","WTI crude, front-month futures. Feeds headline inflation and consumer spending; geopolitics shows up here first."],
+  ["BZ=F","Brent crude, the global benchmark. The WTI-Brent gap reflects US supply and export flows."],
+  ["NG=F","US natural gas. Increasingly tied to AI data-center power demand."],
+  ["GC=F","Gold. Usually moves opposite real yields; central-bank buying has weakened that link.","Gold up while real yields also up = buyers fear something beyond rates."],
+  ["HG=F","Copper. Industrial demand, China, and electrification. See copper/gold on Weekly."],
+  ["SOX","Philadelphia semiconductor index (on the Weekly semis chart). Highest-beta piece of the AI trade; tends to lead the rest of tech.","Semis lagging NDX on up days = leadership fading."],
+  ["NVDA","AI bellwether. Earnings and guidance set the tone for the whole trade.","Beats but sells off = priced in."],
+  ["AVGO","Custom AI chips and networking. Second read on AI capex."],
+  ["TSM","Makes almost every leading-edge chip. Its monthly sales are an early capex signal."],
+  ["MSFT","Hyperscaler. Capex guidance on earnings calls = demand for chips."],
+  ["GOOGL","Hyperscaler. Also the search-disruption question."],
+  ["AMZN","Hyperscaler (AWS)."],
+  ["META","Hyperscaler-scale capex without a cloud business selling it. Watch its bond issuance."],
+  ["ORCL","Heavily debt-funded AI data-center build-out. A key name for the 'is this financed sustainably' question."],
+  ["AAPL","Largest consumer-tech weight; less AI-capex driven."],
+  ["QQQ","ETF tracking the Nasdaq 100: one tile for 'how is big tech doing' before you look at single names.","A name moving opposite QQQ on a big QQQ day is telling you something company-specific."],
+  ["NFLX","Streaming. In FANG+ as one of the six FAANMG names."],
+  ["MU","Memory chips (HBM for AI). Added to FANG+ in March 2026, replacing CrowdStrike.","Memory pricing is one of the most cyclical parts of the AI trade."],
+  ["PLTR","AI software sentiment gauge. Very high multiple, so very rate- and mood-sensitive."]
+ ],
+ weekly: [
+  ["How to use this tab","Once a week (Sunday works). Three questions in order: what regime are we in, how is it hitting tech, is anything breaking."],
+  ["regime","Regime read: macro reduced to whether growth and inflation are each rising or falling. Rough signals: 2y (Fed path), breakevens (inflation), copper/gold (growth), stock-bond correlation (which one the market fears).","A rules-of-thumb guess, not a model. Use it to frame the week."],
+  ["Quadrants","Growth up + inflation down = Goldilocks (tech leads). Growth up + inflation up = reflation (commodities, cyclicals). Growth down + inflation down = slowdown (bonds rally). Growth down + inflation up = stagflation (stocks and bonds fall together)."],
+  ["ndx_real","NDX vs 10y real yield, plotted inverted (so both rising = consistent). Tech is long-duration: most of its value is far-future earnings, so it trades like a long bond.","When NDX rises while real yields also rise, AI earnings are carrying it, or valuations have detached. Fragile either way."],
+  ["rsp_spy","Equal-weight S&P divided by cap-weight. Falling = the index depends on fewer, bigger names.","Concentration gauge for the bubble question."],
+  ["sox_spx","Semis relative to the S&P. Rising = AI trade leading.","Rolling over while SPX holds = leadership changing."],
+  ["cu_au","Copper/gold ratio vs 10y yield. Copper = growth, gold = safety; the ratio usually tracks the 10y.","When they split, one market is wrong."],
+  ["stock_bond","60-day correlation of S&P daily returns with 10y yield changes. Positive here = stocks up when yields up = growth regime, bonds hedge stocks. Negative = stocks fall when yields rise = inflation/rates regime, bonds stop hedging.","A flip is a regime change. Matters for every multi-asset portfolio, including Two Sigma's."],
+  ["curve","2s10s over the past year.","Re-steepening after a long inversion has historically come close to recessions."],
+  ["hy","High-yield spread over the past year. Calm under ~3.5%, stressed above ~5%."],
+  ["vix_move","Equity vol vs bond vol.","They should move together; a gap usually closes."],
+  ["breadth","Share of your single names (not QQQ) trading above its 200-day average. Index near highs while breadth falls = late-cycle narrowing.","Uses your watchlist names only, not the full NDX."],
+  ["Bubble checklist (not on the dashboard)","Hyperscaler capex vs cloud revenue growth (earnings calls), AI-related bond issuance and Oracle/Meta credit spreads, leveraged-ETF flows, retail call volume, FINRA margin debt (monthly, link on Sources)."]
+ ],
+ sources: [
+  ["How to use this tab","Coming up = the next three weeks of scheduled events, in order. Each release card shows what the number has been doing, so when it prints you know whether it's a surprise. The consensus forecast is on Bloomberg's economic calendar; the market moves on actual minus consensus, not the number itself."],
+  ["fomc","FOMC rate decision. The Fed sets the overnight rate; the chart is the upper end of its target range.","What moves markets is the decision vs what futures priced (CME FedWatch), the statement wording, and the press conference tone."],
+  ["cpi","Consumer price inflation, shown year over year. Core strips out food and energy, which is what the Fed watches more closely. The month-over-month core number (0.2 vs 0.3 vs 0.4) is what traders react to on the day.","Hot core = 2y yield up, cuts priced out, tech down. Cool core = the opposite."],
+  ["jobs","Jobs report. Bars = payrolls added each month (thousands). Line = unemployment rate.","Strong payrolls with rising wages = fewer cuts. Unemployment rising fast has historically been an early recession signal."],
+  ["claims","Weekly new unemployment claims (thousands). The fastest labor read: weekly instead of monthly.","A sustained rise is noticed before the monthly jobs report shows it."],
+  ["pce","PCE inflation, year over year. The Fed's preferred inflation measure (its 2% target is on PCE). Mostly predictable from CPI, so it moves markets less.","Core PCE is the number in the Fed's own projections."],
+  ["gdp","Real GDP growth, quarterly, annualized. Advance estimate first, then two revisions.","Backward-looking; markets care more when it surprises big or turns negative."],
+  ["eia","Weekly US crude inventories (million barrels). Builds = more supply sitting around; draws = tightening.","A bigger draw than expected tends to push oil up that day."],
+  ["cot","Weekly futures positioning by trader type, as of Tuesday. No chart here; read the report for the markets you trade.","Extreme speculative longs or shorts = crowded trade, fuel for a reversal."],
+  ["auctions","Treasury selling new notes and bonds. Results at 1:00pm ET. Compare the auction yield to where it traded just before (the 'tail' if higher) and the bid-to-cover.","Weak auctions push long yields up, which hits tech. Big in a fixed income seat."],
+  ["Why primary sources","Bloomberg tells you what happened and why people think it matters. These are the actual documents everyone is reacting to. Five minutes on the source beats twenty on commentary."],
+  ["Fed","FOMC meets 8 times a year. Statement at 2:00pm ET, press conference 2:30pm. Minutes 3 weeks later. Speeches in between tell you how individual members lean.","Read the statement diff vs last meeting: one changed word moves markets."],
+  ["CME","FedWatch converts fed funds futures into probabilities of each rate outcome at each meeting.","Compare to what Fed speakers say. The gap is where vol comes from. Also directly relevant to Kalshi Fed markets."],
+  ["BLS","Bureau of Labor Statistics. CPI (inflation) mid-month, jobs report (nonfarm payrolls, unemployment) usually the first Friday, both at 8:30am ET. Weekly jobless claims come from the Labor Dept every Thursday.","The two biggest scheduled market movers. Know the consensus before 8:30."],
+  ["BEA","Bureau of Economic Analysis. GDP (quarterly) and PCE inflation (monthly, the Fed's preferred inflation measure)."],
+  ["Treasury","Auctions: the government selling new debt. Weak demand (high yield vs pre-auction level, low bid-to-cover) pushes yields up. Quarterly refunding: how much and which maturities they will issue next quarter.","Refunding announcements have moved the 10y more than CPI some quarters. Core to a fixed income seat."],
+  ["EIA","Energy Information Administration. Weekly petroleum report, Wednesdays 10:30am ET: crude and gasoline inventories.","The weekly oil catalyst."],
+  ["CFTC","Commitments of Traders: positioning in futures (who is long/short), released Fridays for Tuesday's data.","Crowded positioning = fuel for a squeeze. Very futures-desk relevant."],
+  ["NY Fed","ACM term premium: the model estimate of extra yield for holding long bonds vs rolling short ones.","Rising term premium explains 10y up without Fed expectations moving."],
+  ["FINRA","Monthly margin debt. Leverage in the retail and brokerage system; a froth gauge."]
+ ],
+};
+
+const NAMES={fomc:"FOMC rate decision",cpi:"CPI inflation",jobs:"Jobs report",claims:"Initial jobless claims",pce:"PCE inflation",gdp:"GDP",eia:"EIA crude inventories",cot:"Commitments of Traders",auctions:"Treasury auctions",regime:"Regime read",ndx_real:"NDX vs 10y real yield",rsp_spy:"Concentration: RSP / SPY",sox_spx:"Semis vs S&P",cu_au:"Copper / gold vs 10y",stock_bond:"Stock-bond correlation",curve:"2s10s curve chart",hy:"High-yield spread chart",vix_move:"VIX vs MOVE",breadth:"Breadth"};
+</script>
+<script src="../assets/ui.js"></script>
+<script>
+const allTiles = Object.values(D.tiles).flat().filter(t=>!t.missing);
+const T = id => allTiles.find(t=>t.id===id);
+
+// ---------------------------------------------------------------- tabs
+const SECTIONS=[["risk","Risk and indexes","Is the market risk-on or risk-off?"],["rates","Rates","What is money costing, and where is it going?"],["credit","Credit and FX","Is funding stress building?"],["commods","Commodities","What are growth and inflation saying?"],["equities","Equities","QQQ, then the names you follow"]];
+
+function tile(t){
+  if(t.missing) return `<div class="tile"><div class="l">${t.label}</div><div class="c">No data</div></div>`;
+  const z = t.z1!=null && Math.abs(t.z1)>=2 ? `<span class="z">${t.z1>0?"+":""}${t.z1}σ</span>` : `<span style="color:var(--faint);font:11px var(--mono)">${t.z1!=null?t.z1+"σ":""}</span>`;
+  return `<div class="tile" onclick="explain('${t.id}')"><div class="l"><span>${t.label}</span>${z}</div><div class="v">${fmtV(t)}</div><div class="c ${cls(t.d1)}">${sgn(t.d1)}${unit(t.kind)} <span style="color:var(--faint)">1d${t.src==="fred"?" · "+t.asof:""}</span></div>${spark(t.spark)}</div>`;
+}
+
+function daily(){
+  const movers=[...allTiles].filter(t=>t.z1!=null).sort((a,b)=>Math.abs(b.z1)-Math.abs(a.z1)).slice(0,8);
+  let h=`<section><h3>Movers <span>ranked by how unusual today's move was (z-score)</span></h3><div class="movers">`+
+    movers.map(t=>`<div class="mv" onclick="explain('${t.id}')"><b>${t.label}</b> <span class="${cls(t.d1)}">${sgn(t.d1)}${unit(t.kind)}</span> <span class="z">${t.z1>0?"+":""}${t.z1}σ</span></div>`).join("")+`</div></section>`;
+  SECTIONS.forEach(([g,n,q])=>{ const ts=D.tiles[g]; h+=`<section><h3>${n} <span>${q}</span></h3><div class="grid">${ts.map(tile).join("")}</div></section>`; });
+  h+=`<p class="hint">FRED series (rates, spreads) update once a day with a one-day lag; the date is shown on each tile. Use HYG/LQD and ^TNX-style live quotes for intraday.</p>`;
+  return h;
+}
+
+function regime(){
+  const y2=T("DGS2"), be=T("T5YIE"), cu=D.charts.cu_au&&D.charts.cu_au.a, sb=D.charts.stock_bond;
+  const cuChg = cu&&cu.v.length>22 ? (cu.v[cu.v.length-1]/cu.v[cu.v.length-22]-1)*100 : null;
+  const sbNow = sb&&sb.v.length ? sb.v[sb.v.length-1] : null;
+  const growth = cuChg==null ? null : cuChg>0;
+  const infl = be&&be.m1!=null ? be.m1>0 : null;
+  const cards=[
+    ["DGS2","Fed path (2y, 1 month)", y2? `${sgn(y2.m1)}bp`:"–", y2? (y2.m1<-10?"Market pricing more cuts":y2.m1>10?"Market pricing fewer cuts / hikes":"Little change in Fed pricing"):""],
+    ["T5YIE","Inflation (5y breakeven, 1 month)", be? `${sgn(be.m1)}bp`:"–", infl==null?"":infl?"Inflation expectations rising":"Inflation expectations falling"],
+    ["cu_au","Growth (copper/gold, 1 month)", cuChg==null?"–":`${cuChg>0?"+":""}${cuChg.toFixed(1)}%`, growth==null?"":growth?"Growth signal improving":"Growth signal weakening"],
+    ["stock_bond","Stock-bond correlation (60d)", sbNow==null?"–":sbNow.toFixed(2), sbNow==null?"":sbNow>0?"Growth regime: bonds hedge stocks":"Rates/inflation regime: bonds not hedging"]
+  ];
+  const quad = growth==null||infl==null ? "Not enough data" : growth&&!infl?"Goldilocks (growth up, inflation down): tech tends to lead":growth&&infl?"Reflation (growth up, inflation up): commodities and cyclicals tend to lead":!growth&&!infl?"Slowdown (growth down, inflation down): bonds tend to rally":"Stagflation risk (growth down, inflation up): stocks and bonds both struggle";
+  return `<div class="regime">`+cards.map(([id,q,a,e])=>`<div class="rc" onclick="explain('${id==="DGS2"||id==="T5YIE"?"regime":id}')"><div class="q">${q}</div><div class="a">${a}</div><div class="e">${e}</div></div>`).join("")+`</div><div class="verdict" onclick="explain('Quadrants')" style="cursor:pointer"><b>Rough regime read:</b> ${quad}</div>`;
+}
+
+function weekly(){
+  const C=D.charts;
+  const box=(id,title,sub,svg,leg)=>`<div class="chart" onclick="explain('${id}')"><h4>${title}</h4><p class="sub">${sub}</p>${svg}${leg?`<div class="leg">${leg}</div>`:""}</div>`;
+  const lg=(a,b)=>`<span><i style="background:var(--acc)"></i>${a}</span>`+(b?`<span><i style="background:var(--warn)"></i>${b}</span>`:"");
+  let h=`<section><h3>1. What regime are we in?</h3>${regime()}</section>`;
+  h+=`<section><h3>2. How is it hitting tech?</h3><div class="charts">`+
+    box("ndx_real","NDX vs 10y real yield","Real yield inverted: lines together = rates explain tech",chart([C.ndx_real.a,C.ndx_real.b],{dual:1,invert:1}),lg("NDX","10y real yield (inverted)"))+
+    box("rsp_spy","Concentration: RSP / SPY","Falling = narrower market",chart([C.rsp_spy]),lg("Equal / cap weight"))+
+    box("sox_spx","Semis vs S&P: SOX / SPX","Rising = AI trade leading",chart([C.sox_spx]),lg("SOX / SPX"))+
+    `<div class="chart" onclick="explain('breadth')"><h4>Breadth: your names above 200-day average</h4><p class="sub">Your watchlist names</p><div style="font:600 28px var(--mono);margin:18px 0 4px">${D.breadth.above} / ${D.breadth.n}</div><div style="height:8px;background:var(--line);border-radius:4px"><div style="height:8px;width:${D.breadth.n?D.breadth.above/D.breadth.n*100:0}%;background:var(--acc);border-radius:4px"></div></div></div>`+
+    `</div></section>`;
+  h+=`<section><h3>3. Is anything breaking?</h3><div class="charts">`+
+    (C.stock_bond?box("stock_bond","Stock-bond correlation (60d)","SPX returns vs 10y yield changes",chart([C.stock_bond],{zero:1}),lg("Correlation")):"")+
+    box("cu_au","Copper / gold vs 10y yield","Usually move together",chart([C.cu_au.a,C.cu_au.b],{dual:1}),lg("Copper / gold","10y yield"))+
+    box("curve","2s10s curve","Below the line = inverted",chart([C.curve],{zero:1}),lg("10y minus 2y"))+
+    box("hy","High-yield spread","Credit cracks first",chart([C.hy]),lg("HY OAS, %"))+
+    box("vix_move","VIX vs MOVE","Equity vol vs bond vol",chart([C.vix_move.a,C.vix_move.b],{dual:1}),lg("VIX","MOVE"))+
+    `</div></section>`;
+  h+=`<section><h3>Performance <span>1 week / 1 month / 1 year, with 5-day z-score</span></h3><table><tr><th>Name</th><th>Last</th><th>1w</th><th>1m</th><th>1y</th><th>5d z</th></tr>`+
+    SECTIONS.map(([g,n])=>`<tr class="grp"><td colspan="6">${n}</td></tr>`+D.tiles[g].filter(t=>!t.missing).map(t=>`<tr onclick="explain('${t.id}')" style="cursor:pointer"><td>${t.label}</td><td>${fmtV(t)}</td><td class="${cls(t.w1)}">${sgn(t.w1)}${unit(t.kind)}</td><td class="${cls(t.m1)}">${sgn(t.m1)}${unit(t.kind)}</td><td class="${cls(t.y1)}">${sgn(t.y1)}${unit(t.kind)}</td><td>${t.z5!=null&&Math.abs(t.z5)>=2?`<span class="z">${t.z5}σ</span>`:t.z5??"–"}</td></tr>`).join("")).join("")+`</table></section>`;
+  return h;
+}
+
+function sources(){
+  const byOrg={}; D.links.forEach(l=>(byOrg[l.org]=byOrg[l.org]||[]).push(l));
+  const fmtD = iso => new Date(iso+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  const lastTxt = r => r.series.length ? r.series.map(x=>`${x.label.split(" (")[0]}: ${x.last}${x.kind==="yoy"||r.unit==="%"&&x.kind!=="diff"?"%":x.kind==="diff"?"k":""}`).slice(0,2).join(" · ") : "";
+  // ordered upcoming events, next 21 days
+  const today=new Date(); today.setHours(0,0,0,0); const lim=new Date(today); lim.setDate(lim.getDate()+21);
+  let ev=[];
+  D.releases.forEach(r=>r.next.forEach(d=>{const dd=new Date(d+"T12:00:00"); if(dd>=today&&dd<=lim) ev.push({d,time:r.time,name:r.name,id:r.id,last:lastTxt(r)})}));
+  D.auctions.forEach(a=>{const dd=new Date(a.date+"T12:00:00"); if(dd>=today&&dd<=lim) ev.push({d:a.date,time:"1:00pm",name:`${a.term} ${a.type} auction`,id:"auctions",last:""})});
+  ev.sort((a,b)=>a.d.localeCompare(b.d)||a.time.localeCompare(b.time));
+  const approx = D.releases.filter(r=>!r.exact&&r.series.length&&r.id!=="jobs").map(r=>r.name);
+  let h=`<section><h3>Coming up <span>next 3 weeks, in order (times ET)</span></h3><table class="cal"><tr><th>Date</th><th>Time</th><th>Event</th><th>Last reading</th></tr>`+
+    (ev.length?ev.map(e=>`<tr onclick="openRel('${e.id}')" style="cursor:pointer"><td>${fmtD(e.d)}</td><td>${e.time}</td><td>${e.name}</td><td style="color:var(--mute)">${e.last}</td></tr>`).join(""):`<tr><td colspan="4">Nothing scheduled</td></tr>`)+`</table>`+
+    `<p class="hint" style="margin-top:6px">Weekly releases (claims, EIA, CFTC) shift around federal holidays, e.g. Thanksgiving week. Confirm on the source.</p>`+(approx.length?`<p class="hint">${approx.join(", ")}: dates not shown. Add a free FRED API key (see README) for exact dates, or check the BLS/BEA schedule links below.</p>`:"")+`</section>`;
+  h+=`<section><h3>The releases <span>what each number has been doing, last ${D.releases[0]&&D.releases[0].series[0]?"5 years":""}</span></h3><div class="charts">`+
+    D.releases.filter(r=>r.series.length).map(r=>{
+      const nx = r.next.length ? `Next: ${fmtD(r.next[0])}, ${r.time}` : (r.exact?"":"Next: see schedule");
+      const vals = r.series.map((x,k)=>`<span><i style="background:${k?"var(--warn)":"var(--acc)"}"></i>${x.label}: <b>${x.last}</b> <span style="color:var(--faint)">(prior ${x.prev}, ${x.asof})</span></span>`).join("");
+      const bars = r.series[0].kind==="diff";
+      return `<div class="chart" id="rel-${r.id}" onclick="explain('${r.id}')"><h4 style="display:flex;justify-content:space-between"><span>${r.name}</span><span style="font-weight:400;color:var(--mute);font-size:12px">${r.org} · ${nx}</span></h4>${chart(r.series.slice(0,2),{dual:r.series.length>1,bars})}<div class="leg" style="flex-direction:column;gap:2px;margin-top:4px">${vals}</div></div>`;
+    }).join("")+`</div></section>`;
+  h+=`<section><h3>Calendars and data <span>bookmark-style links</span></h3><div class="src">`+
+    Object.entries(byOrg).map(([o,ls])=>`<div class="box" onclick="explain('${o}')"><h4>${o}</h4><ul>${ls.map(l=>`<li><a href="${l.url}" target="_blank" rel="noopener">${l.name}</a></li>`).join("")}</ul></div>`).join("")+`</div></section>`;
+  return h;
+}
+function openRel(id){ const el=document.getElementById("rel-"+id); if(el) el.scrollIntoView({block:"center",behavior:"smooth"}); explain(id); }
+
+
+initPage([["daily","Daily",daily],["weekly","Weekly",weekly],["sources","Calendar",sources]], "daily");
+</script>
+</body>
+</html>

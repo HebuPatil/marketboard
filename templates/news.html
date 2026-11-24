@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>News</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="sub">
+  <span class="meta" id="gen"></span>
+  <span class="badge" id="demo" style="display:none">Demo data</span>
+  <nav id="tabs"></nav>
+  <button class="btn" id="keybtn">Key</button>
+</header>
+<div class="wrap" id="wrap"><main id="main"></main><aside id="key"></aside></div>
+<script>
+const D = __DATA__;
+const PAGE = "news";
+const NAMES = {keywords:"Keyword weights", ranking:"How the ranking works", movers:"Today's movers", primary:"Primary sources", read:"How to read this", all:"All headlines"};
+const KEY = {
+ today: [
+  ["read","Read the top 5 properly (on Bloomberg, your subscription). Skim the shortlist titles; open one only if it touches something you hold, trade, or saw move on the Markets page. That's the whole routine: about 15 minutes."],
+  ["ranking","Ranked by a keyword score from KEYWORDS in news.py (rates and Fed, AI and chips weigh most), plus a boost for headlines about today's movers, for primary sources, and for freshness. The 'Matches' line shows why each one ranked.","If good stories keep landing low, add their words to KEYWORDS."],
+  ["movers","The most unusual moves from the Markets page (z-score). Headlines that explain these get ranked higher.","If a big mover has no headline explaining it, that's worth noticing too."],
+  ["primary","Fed, BLS, EIA: the actual documents. Marked with a tag. A Fed statement or CPI release beats any article about it."]
+ ],
+ keywords: [
+  ["keywords","The words the ranking looks for, with their points. A headline's score is the sum of every word it matches, plus 3 for each of today's movers it names, 1.5 for a primary source, and up to 2 for being fresh.","Read-only here. To change them, edit KEYWORDS in news.py."]
+ ],
+ all: [
+  ["all","Every headline from the last 36 hours, newest first, grouped by source. Primary sources keep older items too, since they post less often."],
+  ["ranking","To change sources, edit FEEDS in news.py. To change what gets ranked up, edit INTERESTS and KEYWORDS."]
+ ]
+};
+</script>
+<script src="../assets/ui.js"></script>
+<script>
+const ago = iso => { if(!iso) return ""; const h=(Date.now()-new Date(iso))/36e5; return h<1?Math.max(1,Math.round(h*60))+"m ago":h<24?Math.round(h)+"h ago":Math.round(h/24)+"d ago"; };
+const src = it => `<span class="src2">${esc(it.src)} · ${esc(it.section)} · ${ago(it.when)}</span>${it.primary?'<span class="tag">primary</span>':""}${it.tag?`<span class="tag">${esc(it.tag)}</span>`:""}`;
+const link = it => `<a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.title)}</a>`;
+
+function today(){
+  let h = "";
+  if(D.movers.length) h += `<section><h3>Today's movers <span>what the headlines should explain</span></h3><div class="movers">`+
+    D.movers.slice(0,8).map(m=>`<div class="mv" onclick="explain('movers')"><b>${esc(m.label)}</b> <span class="${cls(m.d1)}">${sgn(m.d1)}${unit(m.kind)}</span> <span class="z">${m.z1>0?"+":""}${m.z1}σ</span></div>`).join("")+`</div></section>`;
+  h += `<section class="news"><h3>Top ${D.top.length} to read <span>ranked by ${esc(D.ranked_by)}</span></h3><ol class="top5" style="padding:0;margin:0">`+
+    D.top.map((it,i)=>`<li><span class="n">${i+1}</span>${link(it)}<div>${src(it)}</div>${it.why?`<div class="why">${esc(it.why)}</div>`:""}</li>`).join("")+`</ol></section>`;
+  h += `<section class="news"><h3>Shortlist <span>${D.shortlist.length} worth a glance</span></h3><div class="box"><ul>`+
+    D.shortlist.map(it=>`<li>${link(it)}<br>${src(it)}</li>`).join("")+`</ul></div></section>`;
+  if(D.errors.length) h += `<p class="hint">Feeds that failed this run: ${D.errors.map(esc).join("; ")}</p>`;
+  return h;
+}
+function all(){
+  const groups = {};
+  D.all.forEach(it => (groups[it.src+" · "+it.section] = groups[it.src+" · "+it.section] || []).push(it));
+  return `<section class="news"><h3>All headlines <span>${D.all.length} from the last 36 hours</span></h3><div class="src">`+
+    Object.entries(groups).map(([g,its])=>`<div class="box" onclick="explain('all')"><h4>${esc(g)}<span style="font-weight:400;color:var(--faint)">${its.length}</span></h4><ul>${its.map(it=>`<li>${link(it)} <span class="src2">${ago(it.when)}</span></li>`).join("")}</ul></div>`).join("")+`</div></section>`;
+}
+function keywords(){
+  const label = w => w>=3.5 ? "Highest" : w>=3 ? "High" : w>=2 ? "Medium" : "Low";
+  return `<section><h3>Ranking keywords <span>read-only; edit KEYWORDS in news.py to change</span></h3><div class="src">`+
+    D.keywords.map(k=>`<div class="box" onclick="explain('keywords')"><h4><span>${label(k.weight)} priority</span><span class="z">+${k.weight} each</span></h4><div style="display:flex;flex-wrap:wrap;gap:5px">${k.words.map(w=>`<span class="tag" style="margin:0;white-space:nowrap">${esc(w)}</span>`).join("")}</div></div>`).join("")+
+    `</div></section><section><h3>Bonuses</h3><div class="box"><ul><li>+3 for each of today's movers (from the Markets page) named in the headline</li><li>+1.5 for primary sources (Fed, BLS, EIA)</li><li>Up to +2 for freshness, fading over 24 hours</li></ul></div></section>`+
+    `<section><h3>Your interests <span>the profile the keywords were built from</span></h3><div class="box"><pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;margin:0">${esc(D.interests)}</pre></div></section>`;
+}
+initPage([["today","Today",today],["all","All headlines",all],["keywords","Keywords",keywords]], "today");
+</script>
+</body>
+</html>
