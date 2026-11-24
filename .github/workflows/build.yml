@@ -1,0 +1,61 @@
+name: Build dashboard
+
+on:
+  schedule:
+    # GitHub cron is UTC. These are ~5:30am and ~1:30pm Pacific (6:30/2:30 during daylight time),
+    # weekdays. GitHub can start scheduled runs a few minutes late.
+    - cron: "30 13 * * 1-5"
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:            # "Run workflow" button in the Actions tab
+    inputs:
+      force:
+        description: "Rebuild even if built recently"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.prep.outputs.skip }}
+    env:
+      TZ: America/Los_Angeles
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      FORCE: ${{ inputs.force || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas numpy
+      - id: prep
+        run: python ci_prepare.py
+      - if: steps.prep.outputs.skip != 'true'
+        run: python run_all.py --force || echo "some pages failed; previous versions kept"
+      - if: steps.prep.outputs.skip != 'true'
+        run: mkdir site && cp -r index.html assets pages site/
+      - if: steps.prep.outputs.skip != 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
